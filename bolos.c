@@ -32,8 +32,8 @@ int main(int argc, char *argv[])
             // printf("\nSoy A y mi PID es : %d\n", getpid());
             // Le cambiamos el nombre a A
             strcpy(PROGRAMA, "A");
-            execv("bolos", argv);
-            // Lo que hace execv es que el programa entero se vuelva a ejecutar, nada mas que ahora
+            execl("bolos", PROGRAMA, getpid());
+            // Lo que hace execlv es que el programa entero se vuelva a ejecutar, nada mas que ahora
             // Como le hemos cambiado argv[0] a "A", en vez de entrar por esta rama del if
             // Entrara por la siguiente
         }
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
                     {
                         // printf("Soy %s y mi PID es : %d\n", hijos[i], getpid());
                         strcpy(PROGRAMA, hijos[i]);
-                        execv("bolos", argv);
+                        execl("bolos", PROGRAMA, getpid());
 
                     }
                 }
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
                 {
                     // Cambiamos de nombre
                     strcpy(PROGRAMA, "D");
-                    execv("bolos", argv);
+                    execl("bolos", PROGRAMA, getpid());
                 }
                 else if(pid == -1)
                 {
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
                 {
                     // Cambiamos de nombre
                     strcpy(PROGRAMA, "F");
-                    execv("bolos", argv);
+                    execl("bolos", PROGRAMA, getpid());
                 }
                 else if(pid == -1)
                 {
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
                 if (pid == 0) 
                 {
                     strcpy(PROGRAMA, "G");
-                    execv("bolos", argv);
+                    execl("bolos", PROGRAMA, getpid());
                 }
                 else if(pid == -1)
                 {
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
                 if (pid == 0) 
                 {
                     strcpy(PROGRAMA, "J");
-                    execv("bolos", argv);
+                    execl("bolos", PROGRAMA, getpid());
                 }
                 else if(pid == -1)
                 {
