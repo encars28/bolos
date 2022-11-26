@@ -41,6 +41,11 @@ int main(int argc, char *argv[])
             // Como le hemos cambiado argv[0] a "A", en vez de entrar por esta rama del if
             // Entrara por la siguiente
         }
+        else if(pid == -1)
+        {
+          printf("Fallo en la generacion de procesos");
+          exit(1);
+        }
 
         printf("Soy P y mi PID es : %d\n", getpid());
         exit(0);
@@ -59,6 +64,11 @@ int main(int argc, char *argv[])
                     if(pid > 0)  {
                         continue; // A esta iteracion entra solo A, que ya esta creado, por tanto le decimos que vuelva a iterar el bucle for
                     }
+                    else if(pid == -1)
+                   {
+                     printf("Fallo en la generacion de procesos");
+                     exit(1);
+                   }
 
                     else if (pid == 0) 
                     {
@@ -123,6 +133,11 @@ int main(int argc, char *argv[])
                     strcpy(PROGRAMA, "D");
                     execv("bolos", argv);
                 }
+                else if(pid == -1)
+                {
+                  printf("Fallo en la generacion de procesos");
+                  exit(1);
+                }
 
                 while (1)
                 {
@@ -144,6 +159,11 @@ int main(int argc, char *argv[])
                     strcpy(PROGRAMA, "F");
                     execv("bolos", argv);
                 }
+                else if(pid == -1)
+                {
+                  printf("Fallo en la generacion de procesos");
+                  exit(1);
+                }
 
                 while (1)
                 {
@@ -162,7 +182,11 @@ int main(int argc, char *argv[])
                     strcpy(PROGRAMA, "G");
                     execv("bolos", argv);
                 }
-
+                else if(pid == -1)
+                {
+                  printf("Fallo en la generacion de procesos");
+                  exit(1);
+                }
                 while (1)
                 {
                     pause();
@@ -188,7 +212,11 @@ int main(int argc, char *argv[])
                     strcpy(PROGRAMA, "J");
                     execv("bolos", argv);
                 }
-
+                else if(pid == -1)
+                {
+                  printf("Fallo en la generacion de procesos");
+                  exit(1);
+                }
                 while (1)
                 {
                     pause();
