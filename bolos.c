@@ -11,9 +11,7 @@ int main(int argc, char *argv[])
 {
     int i, j;
     pid_t pid;
-    char padres [5] = {'B','H','E','I','C'};
-    char hijos  [5] = {'D',' ',' ',' ','F'};
-    char nietos [5] = {'G',' ',' ',' ','J'};
+    char* hijos[] = {"B","H","E","I","C"};
 
     // strcmp devuelve 0 si los strings son iguales
     if (strcmp(PROGRAMA, "./bolos") == 0) {
@@ -30,10 +28,8 @@ int main(int argc, char *argv[])
 
         if (pid == 0)
         {
-            // Aqui entra el Hijo, al cual llamamos A
-            sleep(1);
             // Le meto un mini sleep para que me imprima el soy A con el resto de procesos y no con el P
-            printf("\nSoy A y mi PID es : %d\n", getpid());
+            // printf("\nSoy A y mi PID es : %d\n", getpid());
             // Le cambiamos el nombre a A
             strcpy(PROGRAMA, "A");
             execv("bolos", argv);
@@ -47,7 +43,7 @@ int main(int argc, char *argv[])
           exit(1);
         }
 
-        printf("Soy P y mi PID es : %d\n", getpid());
+        // printf("Soy P y mi PID es : %d\n", getpid());
         exit(0);
 
     } else {
@@ -72,44 +68,12 @@ int main(int argc, char *argv[])
 
                     else if (pid == 0) 
                     {
-                        printf("Soy %c y mi PID es : %d\n", padres[i], getpid());
-
-                        // Comprobamos cual de los 5 hijos es y le cambiamos el nombre
-                        switch (i)
-                        {
-                            case 0:
-                                strcpy(PROGRAMA, "B");
-                                execv("bolos", argv);
-                                break;
-
-                            case 1:
-                                strcpy(PROGRAMA, "H");
-                                execv("bolos", argv);
-                                break;
-
-                            case 2:
-                                strcpy(PROGRAMA, "E");
-                                execv("bolos", argv);
-                                break;
-
-                            case 3:
-                                strcpy(PROGRAMA, "I");
-                                execv("bolos", argv);
-                                break;
-
-                            case 4:
-                                strcpy(PROGRAMA, "C");
-                                execv("bolos", argv);
-                                break;
-
-                            default:
-                                fprintf(stderr, "Error desconocido");
-                                break;
-                        }
+                        // printf("Soy %s y mi PID es : %d\n", hijos[i], getpid());
+                        strcpy(PROGRAMA, hijos[i]);
+                        execv("bolos", argv);
 
                     }
                 }
-
 
                 // El proceso A ha terminado de procrear
                 // Le ponemos a hacer nada
@@ -127,8 +91,6 @@ int main(int argc, char *argv[])
                         
                 if (pid == 0) 
                 {
-                    printf("Soy %c y mi PID es : %d\n", hijos[i], getpid());
-
                     // Cambiamos de nombre
                     strcpy(PROGRAMA, "D");
                     execv("bolos", argv);
@@ -153,8 +115,6 @@ int main(int argc, char *argv[])
                         
                 if (pid == 0) 
                 {
-                    printf("Soy %c y mi PID es : %d\n", hijos[i], getpid());
-
                     // Cambiamos de nombre
                     strcpy(PROGRAMA, "F");
                     execv("bolos", argv);
@@ -178,7 +138,6 @@ int main(int argc, char *argv[])
                 
                 if (pid == 0) 
                 {
-                    printf("Soy %c y mi PID es : %d\n", nietos[i], getpid());
                     strcpy(PROGRAMA, "G");
                     execv("bolos", argv);
                 }
@@ -208,7 +167,6 @@ int main(int argc, char *argv[])
                 
                 if (pid == 0) 
                 {
-                    printf("Soy %c y mi PID es : %d\n", nietos[i], getpid());
                     strcpy(PROGRAMA, "J");
                     execv("bolos", argv);
                 }
