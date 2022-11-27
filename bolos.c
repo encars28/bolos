@@ -5,45 +5,63 @@
 #include <signal.h>
 #include <string.h>
 #include<sys/time.h>
+#include <error.h>
 
 #define PROGRAMA argv[0]
-void trataSeñal(int idSeñal, int pidDer, int pidIzq)
+
+// void trataSeñal(int idSeñal, int pidDer, int pidIzq)
+void trataSenal()
 {
-  printf("FUNCIONA");
-  // Esta funcion sera en la que realizaremos el tratamiento de la señal SIGTERM recogida por cada bolo
-  int random;
-  struct timeval tiempo; // Declaracion necesaria para usar la funcion gettimeofday
+//   printf("FUNCIONA");
+//   // Esta funcion sera en la que realizaremos el tratamiento de la señal SIGTERM recogida por cada bolo
+//   int random;
+//   struct timeval tiempo; // Declaracion necesaria para usar la funcion gettimeofday
     
-  gettimeofday(&tiempo, NULL);
-  random = tiempo.tv_usec % 4; //tiempo.tv_usec nos da los milisegundos que cuenta el sistema. Se accede asi por nomenclatura de la biblioteca
+//   gettimeofday(&tiempo, NULL);
+//   random = tiempo.tv_usec % 4; //tiempo.tv_usec nos da los milisegundos que cuenta el sistema. Se accede asi por nomenclatura de la biblioteca
   
-  switch(random)
-  {
-    case 0:
-      printf("Caso 1");
-      // No hacemos nada
-      break;
-    case 1:
-      printf("Caso 2");
-      // Propagamos la señal al bolo que esta abajo a la derecha
-      break;
-    case 2:
-      printf("Caso 3");
-      //Propagamos la señal al bolo que esta abajo a la izquierda
-      break;
-    case 3:
-      printf("Caso 4");
-      //Propagamos el bolo a los 2 de abajo
-      break;
-  }
+//   switch(random)
+//   {
+//     case 0:
+//       printf("Caso 1");
+//       // No hacemos nada
+//       break;
+//     case 1:
+//       printf("Caso 2");
+//       // Propagamos la señal al bolo que esta abajo a la derecha
+//       break;
+//     case 2:
+//       printf("Caso 3");
+//       //Propagamos la señal al bolo que esta abajo a la izquierda
+//       break;
+//     case 3:
+//       printf("Caso 4");
+//       //Propagamos el bolo a los 2 de abajo
+//       break;
+//   }
+    printf("Tu prima la de cuenca\n");
 }
 
+sigset_t crear_mascara() {
+    sigset_t mascara;
+    sigfillset(&mascara);
+    sigdelset(&mascara, SIGINT);  // CTRL C
+    sigdelset(&mascara, SIGTSTP); // CTRL Z
+    sigdelset(&mascara, SIGTERM);
+
+    return mascara;
+}
 
 int main(int argc, char *argv[])
 {
-    struct sigaction ss;
+    struct sigaction manejadoraSigterm;
+    manejadoraSigterm.sa_handler = &trataSenal;
+    manejadoraSigterm.sa_flags = SA_RESTART;
+    sigaction(SIGTERM, &manejadoraSigterm, NULL);
+
     int i, pid1, pid2;
     char str1[20], str2[20];
+    sigset_t mascara1 = crear_mascara();
     
     pid_t pid, pidA[5], pidHijoB, pidHijoD, pidHijoC, pidHijoF;
     
@@ -56,6 +74,8 @@ int main(int argc, char *argv[])
 
         //Este salto de carro lo uso para que pueda ver todo mas comodo por consola
         printf("\n");
+
+
 
         //Creo el primer hijo 
         pid = fork();
@@ -75,7 +95,7 @@ int main(int argc, char *argv[])
         }
         else if(pid == -1)
         {
-          printf("Fallo en la generacion de procesos");
+          perror("fork() ");
           exit(1);
         }
 
@@ -100,7 +120,7 @@ int main(int argc, char *argv[])
                     }
                     else if(pid == -1)
                    {
-                     printf("Fallo en la generacion de procesos");
+                     perror("fork() ");
                      exit(1);
                    }
 
@@ -153,10 +173,8 @@ int main(int argc, char *argv[])
                 // El proceso A ha terminado de procrear
                 // Le ponemos a hacer nada
                 printf("Hola soy el proceso A: %d.  Voy a propagar a B: %d  y  C: %d.\n", getpid(), pidA[3], pidA[4]);
-                while (1)
-                {
-                    pause();
-                }
+
+                sigsuspend(&mascara1);
 
                 break;
 
@@ -180,15 +198,12 @@ int main(int argc, char *argv[])
                 }
                 else if(pid == -1)
                 {
-                  printf("Fallo en la generacion de procesos");
+                  perror("fork() ");
                   exit(1);
                 }
                 
 
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
 
 
                 break;
@@ -212,14 +227,11 @@ int main(int argc, char *argv[])
                 }
                 else if(pid == -1)
                 {
-                  printf("Fallo en la generacion de procesos");
+                  perror("fork() ");
                   exit(1);
                 }
 
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
 
                 break;
 
@@ -241,13 +253,11 @@ int main(int argc, char *argv[])
                 }
                 else if(pid == -1)
                 {
-                  printf("Fallo en la generacion de procesos");
+                  perror("fork() ");
                   exit(1);
                 }
-                while (1)
-                {
-                    pause();
-                }
+                
+                sigsuspend(&mascara1);
 
                 break;
 
@@ -255,10 +265,8 @@ int main(int argc, char *argv[])
                 pid1 = atoi(argv[1]);
                 pid2 = atoi(argv[2]);
                 printf("Hola soy el proceso E: %d.  Voy a propagar a H: %d  y  I: %d.\n", getpid(), pid2, pid1);
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
+
                 break;
 
             case 'F':
@@ -279,46 +287,36 @@ int main(int argc, char *argv[])
                 }
                 else if(pid == -1)
                 {
-                  printf("Fallo en la generacion de procesos");
+                  perror("fork() ");
                   exit(1);
                 }
-                while (1)
-                {
-                    pause();
-                }
+                
+                sigsuspend(&mascara1);
                 
                 break;
 
             case 'G':
                 printf("Hola soy el proceso G: %d.\n", getpid());
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
+
                 break;
 
             case 'H':
                 printf("Hola soy el proceso H: %d.\n", getpid());
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
+
                 break;
 
             case 'I':
                 printf("Hola soy el proceso I: %d.\n", getpid());
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
+
                 break;
 
             case 'J':
                 printf("Hola soy el proceso J: %d.\n", getpid());
-                while (1)
-                {
-                    pause();
-                }
+                sigsuspend(&mascara1);
+
                 break;
 
             default:

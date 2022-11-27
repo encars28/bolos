@@ -9,15 +9,6 @@
 #define EJECUTABLE "./bolosEncarna"
 #define PADRE "bolosEncarna"
 
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <string.h>
-
-#define PROGRAMA argv[0]
-
 int main(int argc, char *argv[])
 {
     int i, j;
