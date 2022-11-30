@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <wait.h>
+#include <errno.h>
 
 // Estas variables nos ayudarán luego a imprimir la situación pro pantalla
 #define FIL 4
@@ -19,6 +20,7 @@ void imprimir_bolos(char *[]);
 int esperar_bloqueante(pid_t);
 int esperar(pid_t);
 void printefe(char *);
+void printeferr(char *);
 
 /** PROGRAMA PRINCIPAL **/
 
@@ -27,7 +29,7 @@ int main(int argc, char *argv[])
     /** DECLARACION DE VARIABLES **/
 
     // Variables auxiliares
-    int i, res, estado;
+    int i, res, estado, err;
     pid_t pid, pidHijo, pid1, pid2;
     pid_t pidA[5] = {0};
     
@@ -49,10 +51,26 @@ int main(int argc, char *argv[])
     // SIGTERM  -> Señal que propagaremos más adelante
 
     sigset_t mascara;
-    sigfillset(&mascara);
-    sigdelset(&mascara, SIGINT);
-    sigdelset(&mascara, SIGTSTP);
-    sigdelset(&mascara, SIGTERM);
+    if (sigfillset(&mascara) == -1)
+    {
+        perror("sigfillset ");
+        exit(-1);
+    }
+    if (sigdelset(&mascara, SIGINT) == -1)
+    {
+        perror("sigdelset ");
+        exit(-1);
+    }
+    if (sigdelset(&mascara, SIGTSTP) == -1)
+    {
+        perror("sigdelset ");
+        exit(-1);
+    }
+    if (sigdelset(&mascara, SIGTERM) == -1)
+    {
+        perror("sigdelset ");
+        exit(-1);
+    }
 
     // Creamos una manejadora de la señal SIGTERM, para poder cambiar el comportamiento
     // de los procesos cuando la reciban
@@ -64,7 +82,7 @@ int main(int argc, char *argv[])
 
     if (sigaction(SIGTERM, &manejadora_sigterm, NULL) == -1)
     {
-        perror("sigaction() ");
+        perror("sigaction ");
         exit(-1);
     }
 
@@ -85,8 +103,7 @@ int main(int argc, char *argv[])
             // Le cambiamos el nombre a A
             // Para ello volvemos a ejecutar el programa, pero con argv[0] cambiado al nombre que queremos.
             // Esto hará que en vez de entrar por esta rama del if entre por la siguiente
-            strcpy(argv[0], "A");
-            err = execl("bolos", argv[0], NULL);
+            err = execl("bolos", "A", NULL);
             if(err == -1)
             {
                 perror("Execl ");
@@ -131,7 +148,7 @@ int main(int argc, char *argv[])
                 else if (pid == -1)
                 {
                     // Error en la creación del proceso hijo
-                    perror("fork() ");
+                    perror("fork ");
                     exit(-1);
                 }
                 else if (pid == 0)
@@ -152,11 +169,10 @@ int main(int argc, char *argv[])
 
                     // Ya que argv es un vector de strings y los pids son enteros, 
                     // los transformamos a cadenas con sprintf.
-                    strcpy(argv[0], hijos[i]);
                     sprintf(str1, "%d", pidA[0]);
                     sprintf(str2, "%d", pidA[1]);
                     sprintf(str3, "%d", pidA[2]);
-                    err = execl("bolos", argv[0], str1, str2, str3, NULL);
+                    err = execl("bolos", hijos[i], str1, str2, str3, NULL);
                     if(err == -1)
                     {
                         perror("Execl ");
@@ -171,10 +187,10 @@ int main(int argc, char *argv[])
                 // mascara al proceso y a continucación ejecutar la función pause().
                 // De esta manera, el proceso estará bloqueado, sin consumir CPU hasta que le 
                 // lleguen las señales deseadas
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 // El proceso se sale del sigsuspend, porque le ha llegado una señal sigterm
@@ -308,7 +324,7 @@ int main(int argc, char *argv[])
                 if (pid == -1)
                 {
                     // Error en la creación del proceso hijo
-                    perror("wait() ");
+                    perror("wait ");
                     exit(-1);
                 }
 
@@ -327,7 +343,10 @@ int main(int argc, char *argv[])
                 }
 
                 // A procede a matar todo
-                kill(0, SIGINT);
+                if (kill(0, SIGINT) == -1) {
+                    perror("kill ");
+                    exit(-1);
+                }
 
                 break;
 
@@ -356,10 +375,8 @@ int main(int argc, char *argv[])
                 }
                 else if (pid == 0)
                 {
-                    // Cambiamos de nombre
-                    strcpy(argv[0], "D");
                     // Le pasamos a D el pid de H, que esta en argv[2] para que pueda propagar la señal
-                    execl("bolos", argv[0], argv[2], NULL);
+                    execl("bolos", "D", argv[2], NULL);
                     if(err == -1)
                     {
                         perror("Execl ");
@@ -373,10 +390,10 @@ int main(int argc, char *argv[])
                     exit(-1);
                 }
 
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 res = propagar_senal(pid1, pidHijo);
@@ -427,10 +444,8 @@ int main(int argc, char *argv[])
                 }
                 if (pid == 0)
                 {
-                    // Cambiamos de nombre
-                    strcpy(argv[0], "F");
                     // Le pasamos a F el pid de I, que esta en argv[1] para que propagie la señal mas adelante
-                    execl("bolos", argv[0], argv[1], NULL);
+                    execl("bolos", "F", argv[1], NULL);
                     if(err == -1)
                     {
                         perror("Execl ");
@@ -444,10 +459,10 @@ int main(int argc, char *argv[])
                     exit(-1);
                 }
 
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 res = propagar_senal(pidHijo, pid1);
@@ -486,9 +501,8 @@ int main(int argc, char *argv[])
                 }
                 if (pid == 0)
                 {
-                    strcpy(argv[0], "G");
                     // G no tiene que propagar la señal, solo la recibe.
-                    execl("bolos", argv[0], NULL);
+                    execl("bolos", "G", NULL);
                     if(err == -1)
                     {
                         perror("Execl ");
@@ -502,10 +516,10 @@ int main(int argc, char *argv[])
                     exit(-1);
                 }
 
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 res = propagar_senal(pid1, pidHijo);
@@ -531,10 +545,10 @@ int main(int argc, char *argv[])
                 pid1 = (pid_t)atoi(argv[1]);
                 pid2 = (pid_t)atoi(argv[2]);
                 
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 propagar_senal(pid1, pid2);
@@ -556,9 +570,8 @@ int main(int argc, char *argv[])
                 }
                 if (pid == 0)
                 {
-                    strcpy(argv[0], "J");
                     // J no propaga señal, solo la recibe
-                    execl("bolos", argv[0], NULL);
+                    execl("bolos", "J", NULL);
                     if(err == -1)
                     {
                         perror("Execl ");
@@ -572,10 +585,10 @@ int main(int argc, char *argv[])
                     exit(-1);
                 }
 
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 res = propagar_senal(pidHijo, pid1);
@@ -599,10 +612,10 @@ int main(int argc, char *argv[])
                 
                 /** PROCESOS G, H, I, J **/
 
-                err = sigsuspend(&mascara);
-                if(err == -1)
+                sigsuspend(&mascara);
+                if (errno == EFAULT)
                 {
-                    perror("sigsuspend ");
+                    printeferr("Problema con la memoria a la que apunta la mascara");
                     exit(-1);
                 }
                 propagar_senal(0, 0);
@@ -645,6 +658,25 @@ int main(int argc, char *argv[])
     }
 
     /*
+     * Función:  printeferr
+     * --------------------
+     * Imprime una cadena de caracteres a la consola de errores
+     *
+     *  cadena: string a imprimir
+     */
+    void printeferr(char *cadena)
+    {
+        int err;
+        err = write(2, cadena, strlen(cadena));
+        if(err == -1)
+        {
+            perror("write ");
+            exit(-1);
+        }
+    }
+
+
+    /*
      * Función:  propagar_senal 
      * --------------------
      * Propaga la señal Sigterm a otros procesos después de haber sido recibida
@@ -670,7 +702,10 @@ int main(int argc, char *argv[])
         }
         else
         {
-            gettimeofday(&tiempo, NULL);
+            if(gettimeofday(&tiempo, NULL) == -1) {
+                perror("gettimeofday ");
+                exit(-1);
+            }
             random = tiempo.tv_usec % 4; // tiempo.tv_usec nos da los milisegundos que cuenta el sistema. Se accede asi por nomenclatura de la biblioteca
         }
 
@@ -727,7 +762,6 @@ int main(int argc, char *argv[])
     int esperar(pid_t hijo)
     {
         int comprobacion = waitpid(hijo, NULL, WNOHANG);
-
         if (comprobacion == -1)
         {
             perror("waitpid() ");
@@ -761,7 +795,6 @@ int main(int argc, char *argv[])
     int esperar_bloqueante(pid_t hijo)
     {
         int estado;
-
         if (waitpid(hijo, &estado, 0) == -1)
         {
             perror("waitpid() ");
