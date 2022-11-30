@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     if (sigaction(SIGTERM, &manejadora_sigterm, NULL) == -1)
     {
         perror("sigaction() ");
-        exit(1);
+        exit(-1);
     }
 
     // strcmp devuelve 0 si los strings son iguales
@@ -86,13 +86,18 @@ int main(int argc, char *argv[])
             // Para ello volvemos a ejecutar el programa, pero con argv[0] cambiado al nombre que queremos.
             // Esto hará que en vez de entrar por esta rama del if entre por la siguiente
             strcpy(argv[0], "A");
-            execl("bolos", argv[0], NULL);
+            err = execl("bolos", argv[0], NULL);
+            if(err == -1)
+            {
+                perror("Execl ");
+                exit(-1);
+            }
         }
         else if (pid == -1)
         {
             // Error en la creación del proceso hijo
             perror("fork ");
-            exit(1);
+            exit(-1);
         }
 
         // TODO: esperar a que todo se haya creado para matar
@@ -127,7 +132,7 @@ int main(int argc, char *argv[])
                 {
                     // Error en la creación del proceso hijo
                     perror("fork() ");
-                    exit(1);
+                    exit(-1);
                 }
                 else if (pid == 0)
                 {
@@ -151,8 +156,12 @@ int main(int argc, char *argv[])
                     sprintf(str1, "%d", pidA[0]);
                     sprintf(str2, "%d", pidA[1]);
                     sprintf(str3, "%d", pidA[2]);
-                    execl("bolos", argv[0], str1, str2, str3, NULL);
-                    
+                    err = execl("bolos", argv[0], str1, str2, str3, NULL);
+                    if(err == -1)
+                    {
+                        perror("Execl ");
+                        exit(-1);
+                    }
                     }
                 }
                 // El proceso A ha terminado de procrear
@@ -162,8 +171,12 @@ int main(int argc, char *argv[])
                 // mascara al proceso y a continucación ejecutar la función pause().
                 // De esta manera, el proceso estará bloqueado, sin consumir CPU hasta que le 
                 // lleguen las señales deseadas
-                sigsuspend(&mascara);
-
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 // El proceso se sale del sigsuspend, porque le ha llegado una señal sigterm
                 // Esta señal no matará al proceso si no que no hará nada (función nada()), por 
                 // lo que nada más recibir la señal el proceso ejecutara la función propagar_señal
@@ -223,7 +236,7 @@ int main(int argc, char *argv[])
                     if (waitpid(pidA[3], &estado, 0) == -1)
                     {
                         perror("waitpid ");
-                        exit(1);
+                        exit(-1);
                     }
 
                     // WEXITSTATUS devuelve el estado de salida
@@ -263,7 +276,7 @@ int main(int argc, char *argv[])
                     if (waitpid(pidA[4], &estado, 0) == -1)
                     {
                         perror("waitpid ");
-                        exit(1);
+                        exit(-1);
                     }
 
                     if (WEXITSTATUS(estado))
@@ -296,7 +309,7 @@ int main(int argc, char *argv[])
                 {
                     // Error en la creación del proceso hijo
                     perror("wait() ");
-                    exit(1);
+                    exit(-1);
                 }
 
                 if (pid == 0)
@@ -310,7 +323,7 @@ int main(int argc, char *argv[])
                 if (waitpid(pid, NULL, 0) == -1)
                 {
                     perror("waitpid ");
-                    exit(1);
+                    exit(-1);
                 }
 
                 // A procede a matar todo
@@ -347,15 +360,25 @@ int main(int argc, char *argv[])
                     strcpy(argv[0], "D");
                     // Le pasamos a D el pid de H, que esta en argv[2] para que pueda propagar la señal
                     execl("bolos", argv[0], argv[2], NULL);
+                    if(err == -1)
+                    {
+                        perror("Execl ");
+                        exit(-1);
+                    }
                 }
                 else if (pid == -1)
                 {
                     // Error en la creación del proceso hijo
                     perror("fork ");
-                    exit(1);
+                    exit(-1);
                 }
 
-                sigsuspend(&mascara);
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 res = propagar_senal(pid1, pidHijo);
 
                 // Para comprobar que bolos están vivos y están muertos en la rista, hacemos 
@@ -408,15 +431,25 @@ int main(int argc, char *argv[])
                     strcpy(argv[0], "F");
                     // Le pasamos a F el pid de I, que esta en argv[1] para que propagie la señal mas adelante
                     execl("bolos", argv[0], argv[1], NULL);
+                    if(err == -1)
+                    {
+                        perror("Execl ");
+                        exit(-1);
+                    }
                 }
                 else if (pid == -1)
                 {
                     // Error en la creación del hijo
                     perror("fork ");
-                    exit(1);
+                    exit(-1);
                 }
 
-                sigsuspend(&mascara);
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 res = propagar_senal(pidHijo, pid1);
                 
                 // Si C le ha enviado una senal a F, significa que F ha muerto
@@ -456,15 +489,25 @@ int main(int argc, char *argv[])
                     strcpy(argv[0], "G");
                     // G no tiene que propagar la señal, solo la recibe.
                     execl("bolos", argv[0], NULL);
+                    if(err == -1)
+                    {
+                        perror("Execl ");
+                        exit(-1);
+                    }
                 }
                 else if (pid == -1)
                 {
                     // Error en la creación de procesos hijos
                     perror("fork ");
-                    exit(1);
+                    exit(-1);
                 }
 
-                sigsuspend(&mascara);
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 res = propagar_senal(pid1, pidHijo);
                 
                 // Si D le ha enviado una senal a G, significa que G ha muerto
@@ -488,7 +531,12 @@ int main(int argc, char *argv[])
                 pid1 = (pid_t)atoi(argv[1]);
                 pid2 = (pid_t)atoi(argv[2]);
                 
-                sigsuspend(&mascara);
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 propagar_senal(pid1, pid2);
                 exit(0);
 
@@ -511,15 +559,25 @@ int main(int argc, char *argv[])
                     strcpy(argv[0], "J");
                     // J no propaga señal, solo la recibe
                     execl("bolos", argv[0], NULL);
+                    if(err == -1)
+                    {
+                        perror("Execl ");
+                        exit(-1);
+                    }
                 }
                 else if (pid == -1)
                 {
                     // Error en la creación de un proceso hijo
                     perror("fork ");
-                    exit(1);
+                    exit(-1);
                 }
 
-                sigsuspend(&mascara);
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 res = propagar_senal(pidHijo, pid1);
                 
                 // Si F le ha enviado una senal a J, significa que J ha muerto
@@ -541,7 +599,12 @@ int main(int argc, char *argv[])
                 
                 /** PROCESOS G, H, I, J **/
 
-                sigsuspend(&mascara);
+                err = sigsuspend(&mascara);
+                if(err == -1)
+                {
+                    perror("sigsuspend ");
+                    exit(-1);
+                }
                 propagar_senal(0, 0);
                 exit(0);
 
@@ -572,7 +635,13 @@ int main(int argc, char *argv[])
      */
     void printefe(char *cadena)
     {
-        write(1, cadena, strlen(cadena));
+        int err;
+        err = write(1, cadena, strlen(cadena));
+        if(err == -1)
+        {
+            perror("write ");
+            exit(-1);
+        }
     }
 
     /*
@@ -614,7 +683,7 @@ int main(int argc, char *argv[])
             // Propagamos la señal al bolo que esta abajo a la derecha
             if (kill(pidDer, SIGTERM) == -1) {
                 perror("kill ");
-                exit(1);
+                exit(-1);
             }
 
             break;
@@ -623,19 +692,19 @@ int main(int argc, char *argv[])
             // Propagamos la señal al bolo que esta abajo a la izquierda
             if (kill(pidIzq, SIGTERM) == -1) {
                 perror("kill ");
-                exit(1);
+                exit(-1);
             }
             break;
         case 3:
             // Propagamos el bolo a los 2 de abajo
             if (kill(pidDer, SIGTERM) == -1) {
                 perror("kill ");
-                exit(1);
+                exit(-1);
             }
 
             if (kill(pidIzq, SIGTERM) == -1) {
                 perror("kill ");
-                exit(1);
+                exit(-1);
             }
             
             break;
@@ -662,7 +731,7 @@ int main(int argc, char *argv[])
         if (comprobacion == -1)
         {
             perror("waitpid() ");
-            exit(1);
+            exit(-1);
         }
 
         if (comprobacion == 0)
@@ -696,7 +765,7 @@ int main(int argc, char *argv[])
         if (waitpid(hijo, &estado, 0) == -1)
         {
             perror("waitpid() ");
-            exit(1);
+            exit(-1);
         }
 
         if (WEXITSTATUS(estado))
