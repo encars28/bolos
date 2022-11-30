@@ -717,10 +717,11 @@ int main(int argc, char *argv[])
     void imprimir_bolos(char *situacion[])
     {
         int i, j, k = 0;
-        printefe("\n\n");
+        printefe("\n\n\n");
         // relleno los bolos
         for (i = 0; i < FIL; i++)
         {
+            printefe("              ");
             for (j = 0; j < COL; j++)
             {
                 switch (i)
@@ -784,5 +785,5 @@ int main(int argc, char *argv[])
 
             printefe("\n");
         }
-        printefe("\n\n");
+        printefe("\n\n\n");
     }
