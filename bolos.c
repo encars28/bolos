@@ -5,7 +5,7 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/time.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <errno.h>
 
 // Estas variables nos ayudarán luego a imprimir la situación pro pantalla
