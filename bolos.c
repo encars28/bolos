@@ -15,7 +15,7 @@
 
 void nada();
 int propagar_senal(pid_t, pid_t);
-void imprimir_bolos(char *);
+void imprimir_bolos(char *[]);
 int esperar_bloqueante(pid_t);
 int esperar(pid_t);
 void printefe(char *);
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 
     // Vector con el que mostraremos la situación de los bolos por pantalla, 
     // después de que la señal se propague
-    char situacion[] = {'.', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
+    char* situacion[] = {".", "B", "C", "D", "E", "F", "G", "H", "I", "J"};
 
     // Esta es la máscara que van a tener todos los procesos. Bloquea todas las señales menos
     // SIGINT   -> Ctrl + C
@@ -190,13 +190,13 @@ int main(int argc, char *argv[])
                         switch (i)
                         {
                         case 0:
-                            situacion[8] = '.';
+                            situacion[8] = ".";
                             break;
                         case 1:
-                            situacion[7] = '.';
+                            situacion[7] = ".";
                             break;
                         case 2:
-                            situacion[4] = '.';
+                            situacion[4] = ".";
                             break;
                         }
                     }
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
                 if (res == 3 || res == 2)
                 {
                     // C esta muerto
-                    situacion[1] = '.';
+                    situacion[1] = ".";
 
                     // Aqui hay dos opciones, que B se haya muerto sin propagar la señal
                     // o que B haya matado a la vez a su hijo, D
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
                         if (WEXITSTATUS(estado) == 1)
                         {
                             // Si solo hay un bolo vivo, este es G, y D esta muerto
-                            situacion[3] = '.';
+                            situacion[3] = ".";
                         }
 
                         // La otra opción es que WEXITSTATUS(estado) sea 2, en ese caso tanto G como D
@@ -245,8 +245,8 @@ int main(int argc, char *argv[])
                     {
                         // Si el estado de salida es 0, significa que todos los bolos de la rista
                         // estan muertos
-                        situacion[3] = '.';
-                        situacion[6] = '.';
+                        situacion[3] = ".";
+                        situacion[6] = ".";
                     }
                 }
 
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
                 if (res == 3 || res == 1)
                 {
                     // C esta muerto
-                    situacion[2] = '.';
+                    situacion[2] = ".";
 
                     if (waitpid(pidA[4], &estado, 0) == -1)
                     {
@@ -273,15 +273,15 @@ int main(int argc, char *argv[])
                         if (WEXITSTATUS(estado) == 1)
                         {
                             // Si solo hay un bolo vivo, este es J, y F esta muerto
-                            situacion[5] = '.';
+                            situacion[5] = ".";
                         }
                     }
                     else 
                     {
                         // Si el estado de salida es 0, significa que todos los bolos de la rista
                         // estan muertos
-                        situacion[5] = '.';
-                        situacion[9] = '.';
+                        situacion[5] = ".";
+                        situacion[9] = ".";
                     }
                 }
 
@@ -714,10 +714,9 @@ int main(int argc, char *argv[])
      * --------------------
      * Imprime los procesos de forma bonita (como bolos), indicando cuales están vivos
      */
-    void imprimir_bolos(char *situacion)
+    void imprimir_bolos(char *situacion[])
     {
         int i, j, k = 0;
-        char cadena;
         printefe("\n\n");
         // relleno los bolos
         for (i = 0; i < FIL; i++)
@@ -729,8 +728,7 @@ int main(int argc, char *argv[])
                 case 0:
                     if (j == 3)
                     {
-                        cadena = situacion[k];
-                        printefe(&cadena);
+                        printefe(situacion[k]);
                         k++;
                     }
                     else
@@ -742,8 +740,7 @@ int main(int argc, char *argv[])
                 case 1:
                     if (j == 2 || j == 4)
                     {
-                        cadena = situacion[k];
-                        printefe(&cadena);
+                        printefe(situacion[k]);
                         k++;
                     }
                     else
@@ -756,8 +753,7 @@ int main(int argc, char *argv[])
                 case 2:
                     if (j == 1 || j == 3 || j == 5)
                     {
-                        cadena = situacion[k];
-                        printefe(&cadena);
+                        printefe(situacion[k]);
                         k++;
                     }
                     else
@@ -770,8 +766,7 @@ int main(int argc, char *argv[])
                 case 3:
                     if (j == 0 || j == 2 || j == 4 || j == 6)
                     {
-                        cadena = situacion[k];
-                        printefe(&cadena);
+                        printefe(situacion[k]);
                         k++;
                     }
                     else
