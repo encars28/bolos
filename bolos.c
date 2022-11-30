@@ -18,6 +18,7 @@ int propagar_senal(pid_t, pid_t);
 void imprimir_bolos(char *);
 int esperar_bloqueante(pid_t);
 int esperar(pid_t);
+void printefe(char *);
 
 /** PROGRAMA PRINCIPAL **/
 
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
                 }
                 // El proceso A ha terminado de procrear
                 // Le ponemos a hacer nada
-                printf("Hola soy el proceso A: %d.  Voy a propagar a B: %d  y  C: %d.\n", getpid(), pidA[3], pidA[4]);
+               
 
                 sigsuspend(&mascara);
 
@@ -353,7 +354,7 @@ int main(int argc, char *argv[])
                     // Guardamos el pid de D para poder propagar la señal mas adelante
                     pidHijoB = pid;
                     pid1 = (pid_t)atoi(argv[3]);
-                    printf("Hola soy el proceso B: %d.  Voy a propagar a D: %d  y  E: %d.\n", getpid(), pidHijoB, pid1);
+                    
                 }
                 else if (pid == 0)
                 {
@@ -401,7 +402,7 @@ int main(int argc, char *argv[])
                     // Guardamos el pid de F para poder propagar la señal mas adelante
                     pidHijoC = pid;
                     pid1 = (pid_t)atoi(argv[3]);
-                    printf("Hola soy el proceso C: %d.  Voy a propagar a F: %d  y  E: %d.\n", getpid(), pidHijoC, pid1);
+                   
                 }
                 if (pid == 0)
                 {
@@ -449,7 +450,7 @@ int main(int argc, char *argv[])
                     // Guardamos el pid de G para poder propagar la señal mas adelante
                     pidHijoD = pid;
                     pid1 = (pid_t)atoi(argv[1]);
-                    printf("Hola soy el proceso D: %d.  Voy a propagar a G: %d  y  H: %d.\n", getpid(), pidHijoD, pid1);
+                    
                 }
                 if (pid == 0)
                 {
@@ -484,7 +485,7 @@ int main(int argc, char *argv[])
 
                 pid1 = (pid_t)atoi(argv[1]);
                 pid2 = (pid_t)atoi(argv[2]);
-                // printf("Hola soy el proceso E: %d.  Voy a propagar a H: %d  y  I: %d.\n", getpid(), pid2, pid1);
+                
                 sigsuspend(&mascara);
                 propagar_senal(pid1, pid2);
                 exit(0);
@@ -496,7 +497,7 @@ int main(int argc, char *argv[])
                     // Guardamos el pid de J para poder propagar la señal mas adelante
                     pidHijoF = pid;
                     pid1 = (pid_t)atoi(argv[1]);
-                    printf("Hola soy el proceso F: %d.  Voy a propagar a J: %d  y  I: %d.\n", getpid(), pidHijoF, pid1);
+                    
                 }
                 if (pid == 0)
                 {
@@ -548,10 +549,16 @@ int main(int argc, char *argv[])
 
     // El nombre de la funcion es explicativo
     void nada() {}
+    
+    // Escribe por pantalla usando la llamada al sistema write
+    void printefe(char *cadena)
+    {
+      write(1, cadena, strlen(cadena));
+    }
 
     int propagar_senal(pid_t pidDer, pid_t pidIzq)
     {
-        printf("pidDer: %d -- pidIzq: %d\n", pidDer, pidIzq);
+        
         // Esta funcion sera en la que realizaremos el tratamiento de la señal SIGTERM recogida por cada bolo
 
         int err, random, i;
@@ -568,25 +575,22 @@ int main(int argc, char *argv[])
         switch (random)
         {
         case 0:
-
             // No hacemos nada
-            printf("PID: %d. No hago nada\n", getpid());
             break;
         case 1:
 
             // Propagamos la señal al bolo que esta abajo a la derecha
-            printf("PID: %d. Propago la señal al proceso de abajo derecha --> %d\n", getpid(), pidDer);
             err = kill(pidDer, SIGTERM);
             break;
         case 2:
 
             // Propagamos la señal al bolo que esta abajo a la izquierda
-            printf("PID: %d. Propago la señal al proceso de abajo izquierda --> %d\n", getpid(), pidIzq);
+            
             err = kill(pidIzq, SIGTERM);
             break;
         case 3:
             // Propagamos el bolo a los 2 de abajo
-            printf("PID: %d. Propago la señal a los procesos de abajo --> %d  y  %d \n", getpid(), pidDer, pidIzq);
+           
             err = kill(pidDer, SIGTERM);
             err = kill(pidIzq, SIGTERM);
             break;
@@ -642,7 +646,8 @@ int main(int argc, char *argv[])
     void imprimir_bolos(char *situacion)
     {
         int i, j, k = 0;
-        printf("\n\n");
+        char cadena;
+        printefe("\n\n");
         // relleno los bolos
         for (i = 0; i < FIL; i++)
         {
@@ -653,24 +658,26 @@ int main(int argc, char *argv[])
                 case 0:
                     if (j == 3)
                     {
-                        printf("%c", situacion[k]);
+                        cadena = situacion[k];
+                        printefe(&cadena);
                         k++;
                     }
                     else
                     {
-                        printf(" ");
+                        printefe(" ");
                     }
                     break;
 
                 case 1:
                     if (j == 2 || j == 4)
                     {
-                        printf("%c", situacion[k]);
+                        cadena = situacion[k];
+                        printefe(&cadena);
                         k++;
                     }
                     else
                     {
-                        printf(" ");
+                        printefe(" ");
                     }
 
                     break;
@@ -678,12 +685,13 @@ int main(int argc, char *argv[])
                 case 2:
                     if (j == 1 || j == 3 || j == 5)
                     {
-                        printf("%c", situacion[k]);
+                        cadena = situacion[k];
+                        printefe(&cadena);
                         k++;
                     }
                     else
                     {
-                        printf(" ");
+                        printefe(" ");
                     }
 
                     break;
@@ -691,23 +699,24 @@ int main(int argc, char *argv[])
                 case 3:
                     if (j == 0 || j == 2 || j == 4 || j == 6)
                     {
-                        printf("%c", situacion[k]);
+                        cadena = situacion[k];
+                        printefe(&cadena);
                         k++;
                     }
                     else
                     {
-                        printf(" ");
+                        printefe(" ");
                     }
 
                     break;
 
                 default:
-                    printf(" ");
+                    printefe(" ");
                     break;
                 }
             }
 
-            printf("\n");
+            printefe("\n");
         }
-        printf("\n\n");
+        printefe("\n\n");
     }
