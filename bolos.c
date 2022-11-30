@@ -27,8 +27,9 @@ int main(int argc, char *argv[])
     /** DECLARACION DE VARIABLES **/
 
     // Variables auxiliares
-    int i, res1, res2, res3, res4, res5;
-    pid_t pid, pidA[5], pidHijoB, pidHijoD, pidHijoC, pidHijoF, pid1, pid2;
+    int i, res, estado, comprobacion;
+    pid_t pid, pidHijoB, pidHijoD, pidHijoC, pidHijoF, pid1, pid2;
+    pid_t pidA[5] = {0};
     
     // LIsta que usaremos para asignar los nombres a los hijos de A
     char *hijos[] = {"I", "H", "E", "B", "C"};
@@ -37,6 +38,10 @@ int main(int argc, char *argv[])
     // Variables auxiliares que usaremos para convertir los pids a string, para poder pasarlos
     // Como argumentos del programa al llamar execl
     char str1[20], str2[20], str3[20];
+
+    // Vector con el que mostraremos la situación de los bolos por pantalla, 
+    // después de que la señal se propague
+    char situacion[] = {'.', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 
     // Esta es la máscara que van a tener todos los procesos. Bloquea todas las señales menos
     // SIGINT   -> Ctrl + C
@@ -133,9 +138,12 @@ int main(int argc, char *argv[])
 
                     // Para no repetir codigo les pasamos a todos los procesos todos los pids que se necesitan
                     // entre todos. Luego ya cada proceso cogerá los pids que necesite para propagar la señal
-                    // Estos son los pids que cada proceso va a necesitar:
-                        // (Final de propagación) I e H -> No necesitan ninguno
-                        // E -> necesita el pid de H y de I 
+                        // I e H -> No propagan
+                        // E     -> propraga a H y I 
+                        // B     -> propraga a D y E    (D es hijo de B)
+                        // C     -> propraga a F y E    (F es hijo de C)
+                    
+                    // Por lo tanto, pasamos como argumento los pids de I, H y E 
 
                     // Ya que argv es un vector de strings y los pids son enteros, 
                     // los transformamos a cadenas con sprintf.
@@ -144,71 +152,39 @@ int main(int argc, char *argv[])
                     sprintf(str2, "%d", pidA[1]);
                     sprintf(str3, "%d", pidA[2]);
                     execl("bolos", argv[0], str1, str2, str3, NULL);
-
-
-                    //     case 2:
-                    //         strcpy(argv[0], hijos[i]);
-                    //         sprintf(str1, "%d", pidA[0]);
-                    //         sprintf(str2, "%d", pidA[1]);
-                    //         execl("bolos", argv[0], str1, str2, NULL);
-                    //         break;
-
-                    //     // El proceso B propaga la señal a los procesos D y E, por tanto le paso en argv[2] el pid
-                    //     // del proceso E. El pid del proceso D lo tendrá cuando este sea generado, debido a que D es
-                    //     // hijo de B. En argv[1] le pasamos el pid de H para que B le pueda pasar este pid a D, que
-                    //     // lo necesita para que D le propague la señal a H.
-                    //     case 3:
-                    //         strcpy(argv[0], hijos[i]);
-                    //         sprintf(str1, "%d", pidA[1]);
-                    //         sprintf(str2, "%d", pidA[2]);
-                    //         execl("bolos", argv[0], str1, str2, NULL);
-                    //         break;
-
-                    //     // El proceso C propaga la señal a los procesos F y E, por tanto le paso en argv[2] el pid
-                    //     // del proceso E. El pid del proceso F lo tendrá cuando este sea generado, debido a que F es
-                    //     // hijo de C. En argv[1] le pasamos el pid de I para que C le pueda pasar este pid a F, que
-                    //     // lo necesita para que F le propague la señal a I.
-                    //     case 4:
-                    //         strcpy(argv[0], hijos[i]);
-                    //         sprintf(str1, "%d", pidA[0]);
-                    //         sprintf(str2, "%d", pidA[2]);
-                    //         execl("bolos", argv[0], str1, str2, NULL);
-                    //         break;
-                    //     }
                     
                     }
                 }
                 // El proceso A ha terminado de procrear
                 // Le ponemos a hacer nada
-               
 
+                // Para ello usamos la funcion sigsuspend, que lo que hace es aplicar una
+                // mascara al proceso y a continucación ejecutar la función pause().
+                // De esta manera, el proceso estará bloqueado, sin consumir CPU hasta que le 
+                // lleguen las señales deseadas
                 sigsuspend(&mascara);
 
-                res1 = propagar_senal(pidA[4], pidA[3]);
+                // El proceso se sale del sigsuspend, porque le ha llegado una señal sigterm
+                // Esta señal no matará al proceso si no que no hará nada (función nada()), por 
+                // lo que nada más recibir la señal el proceso ejecutara la función propagar_señal
+                res = propagar_senal(pidA[4], pidA[3]);
 
                 sleep(4);
 
-                // Vemos quien esta vivo
+                // Después de la minisiesta vemos quién esta vivo
 
-                // waitpid en su verison no bloqueante devuelve:
-                // 0 si el proceso especificado sigue vivo o no existe
-                // -1 si ha habido algun error
-                // El pid del proceso muerto, en caso de muerte
+                // 1. Comprobamos el estado de E, H e I
 
-                // Comprobamos el estado de E, H e I
-                // i = 0 -> I
-                // i = 1 -> H
-                // i = 2 -> E
+                // Para ello usamos waitpid que en su verison no bloqueante devuelve:
+                    // 0 si el proceso especificado sigue vivo o no existe
+                    // -1 si ha habido algun error
+                    // El pid del proceso muerto, en caso de muerte
 
-                char situacion[] = {'.', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
-                // Iremos indicando los bolos muertos con puntos
-
-                int estado;
-
+                // Iremos indicando los bolos muertos con puntos en el vector de situacion
+                
                 for (i = 0; i < 3; i++)
                 {
-                    estado = esperar(pidA[i]);
-                    if (estado == 0)
+                    if (esperar(pidA[i]) == 0)
                     {
                         // El bolo esta muerto
                         switch (i)
@@ -222,49 +198,51 @@ int main(int argc, char *argv[])
                         case 2:
                             situacion[4] = '.';
                             break;
-
-                        default:
-                            fprintf(stderr, "Error desconocido\n");
-                            break;
                         }
                     }
+
+                    // Si el bolo esta vivo no hacemos nada, ya que en el vector donde tenemos 
+                    // la situación los bolos están vivos por defecto, así que solo hay que 
+                    // modificarlo para indicar que están muertos
                 }
 
-                // Comprobamos la primera arista
+                // 2. Comprobamos la primera arista
 
-                // Si A le ha enviado una senal a B, significa que B ha muerto
-                // res = 3 -> se envia la senal a los dos procesos de abajo
-                // res = 2 -> se envia la senal al proceso de la izquierda
-                if (res1 == 3 || res1 == 2)
+                // Si A le ha enviado una senal a C, significa que B ha muerto
+                    // res = 3 -> se envia la senal a los dos procesos de abajo
+                    // res = 2 -> se envia la senal al proceso de la izquierda
+
+                if (res == 3 || res == 2)
                 {
-                    // B esta muerto
+                    // C esta muerto
                     situacion[1] = '.';
 
-                    // Aqui hay dos opciones, que B se haya muerto sin propagar la senal
+                    // Aqui hay dos opciones, que B se haya muerto sin propagar la señal
                     // o que B haya matado a la vez a su hijo, D
-
-                    // Sabiendo que B ha muerto podemos usar waitpid en su version bloqueante
-                    int estado;
-                    int comprobacion = waitpid(pidA[3], &estado, 0);
-
+                    // Para saber cuál de las dos es comprobamos el estado de salida de B
+                    comprobacion = waitpid(pidA[3], &estado, 0);
                     if (comprobacion == -1)
                     {
-                        perror("waitpid() ");
+                        perror("waitpid ");
                         exit(1);
                     }
 
+                    // WEXITSTATUS devuelve el estado de salida
                     if (WEXITSTATUS(estado))
                     {
                         // Si el estado de salida del hijo es distinto de 0,
                         // significa que D o G siguen todavia vivos
-
                         if (WEXITSTATUS(estado) == 1)
                         {
                             // Si solo hay un bolo vivo, este es G, y D esta muerto
                             situacion[3] = '.';
                         }
+
+                        // La otra opción es que WEXITSTATUS(estado) sea 2, en ese caso tanto G como D
+                        // estarían vivos. Pero ya hemos dicho antes, en este caso no se hace nada, porque 
+                        // en el vector por defecto están todos los procesos vivos.
                     }
-                    else if (WEXITSTATUS(estado) == 0)
+                    else 
                     {
                         // Si el estado de salida es 0, significa que todos los bolos de la rista
                         // estan muertos
@@ -273,13 +251,12 @@ int main(int argc, char *argv[])
                     }
                 }
 
-                // Coomprobamos la segunda arista
+                // 2. Comprobamos la segunda arista
 
-                // Si A le ha enviado una senal a C, significa que C ha muerto
-                // res = 3 -> se envia la senal a los dos procesos de abajo
-                // res = 1 -> se envia la senal al proceso de la derecha
+                // Esta comprobación es análoga a la anterior, nada más que ahora comprobamos que res sea 1 y no 2,
+                    // res = 1 -> se envia la senal al proceso de la derecha
 
-                if (res1 == 3 || res1 == 1)
+                if (res == 3 || res == 1)
                 {
                     // C esta muerto
                     situacion[2] = '.';
@@ -346,7 +323,16 @@ int main(int argc, char *argv[])
                 break;
 
             case 'B':
-                // pid_t pidHijoB, pid1;
+                
+                /** PROCESO B **/
+
+                // El proceso B propaga la señal a los procesos D y E. Por lo tanto: 
+                    // Le pasamos en argv[3] el pid del proceso E. 
+                    // El pid del proceso D lo tendrá cuando este sea generado, debido a que D es hijo de B. 
+                
+                // En argv[2] le pasamos el pid de H para que B le pueda pasar este pid a D, que
+                // lo necesita para que D le propague la señal a H.
+
                 // El proceso B crea una nueva rama
                 pid = fork();
                 if (pid > 0)
@@ -370,12 +356,12 @@ int main(int argc, char *argv[])
                 }
 
                 sigsuspend(&mascara);
-                res2 = propagar_senal(pid1, pidHijoB);
+                res = propagar_senal(pid1, pidHijoB);
                 // Si B le ha enviado una senal a D, significa que D ha muerto
                 // res = 3 -> se envia la senal a los dos procesos de abajo
                 // res = 2 -> se envia la senal al proceso de la izquierda
 
-                if (res2 == 3 || res2 == 2)
+                if (res == 3 || res == 2)
                 {
                     // Aqui hay dos opciones, que D se haya muerto sin propagar la senal
                     // o que D haya matado a la vez a su hijo, G
@@ -395,6 +381,15 @@ int main(int argc, char *argv[])
                 exit(2);
 
             case 'C':
+
+                /** PROCESO C **/
+
+                // El proceso C propaga la señal a los procesos F y E. Por tanto: 
+                    // le paso en argv[3] el pid del proceso E. 
+                    // El pid del proceso F lo tendrá cuando este sea generado, debido a que F es hijo de C. 
+                    
+                // En argv[1] le pasamos el pid de I para que C le pueda pasar este pid a F, que
+                // lo necesita para que F le propague la señal a I.
 
                 pid = fork();
                 if (pid > 0)
@@ -418,12 +413,12 @@ int main(int argc, char *argv[])
                 }
 
                 sigsuspend(&mascara);
-                res3 = propagar_senal(pidHijoC, pid1);
+                res = propagar_senal(pidHijoC, pid1);
                 // Si C le ha enviado una senal a F, significa que F ha muerto
                 // res = 3 -> se envia la senal a los dos procesos de abajo
                 // res = 1 -> se envia la senal al proceso de la derecha
 
-                if (res3 == 3 || res3 == 1)
+                if (res == 3 || res == 1)
                 {
                     // Aqui hay dos opciones, que F se haya muerto sin propagar la senal
                     // o que F haya matado a la vez a su hijo, J
@@ -465,12 +460,12 @@ int main(int argc, char *argv[])
                 }
 
                 sigsuspend(&mascara);
-                res4 = propagar_senal(pid1, pidHijoD);
+                res = propagar_senal(pid1, pidHijoD);
                 // Si D le ha enviado una senal a G, significa que G ha muerto
                 // res = 3 -> se envia la senal a los dos procesos de abajo
                 // res = 2 -> se envia la senal al proceso de la izquierda
 
-                if (res4 == 3 || res4 == 2)
+                if (res == 3 || res == 2)
                 {
                     // D se muere tranquilo sabiendo que ha matado a su hijo
                     exit(0);
@@ -480,8 +475,9 @@ int main(int argc, char *argv[])
                 exit(1);
 
             case 'E':
-                // El proceso E propaga la señal a los procesos H e I, por tanto le paso en argv[1] el pid
-                // del proceso I y en argv[2] le paso el pid del proceso H. 
+                // El proceso E propaga la señal a los procesos H e I. por tanto le paso: 
+                    // en argv[1] el pid del proceso I
+                    // en argv[2] le paso el pid del proceso H.  
 
                 pid1 = (pid_t)atoi(argv[1]);
                 pid2 = (pid_t)atoi(argv[2]);
@@ -512,12 +508,12 @@ int main(int argc, char *argv[])
                 }
 
                 sigsuspend(&mascara);
-                res5 = propagar_senal(pidHijoF, pid1);
+                res = propagar_senal(pidHijoF, pid1);
                 // Si F le ha enviado una senal a J, significa que J ha muerto
                 // res = 3 -> se envia la senal a los dos procesos de abajo
                 // res = 1 -> se envia la senal al proceso de la derecha
 
-                if (res5 == 3 || res5 == 1)
+                if (res == 3 || res == 1)
                 {
                     // F se muere tranquilo sabiendo que ha matado a su hijo
                     exit(0);
@@ -601,7 +597,6 @@ int main(int argc, char *argv[])
 
     int esperar(pid_t hijo)
     {
-
         int comprobacion = waitpid(hijo, NULL, WNOHANG);
 
         if (comprobacion == -1)
