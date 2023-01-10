@@ -1,11 +1,12 @@
 # bolos
 
 Produce un árbol de procesos (cambiándoles el nombre a los del dibujo) de manera:
-
+```
          A
       B     C
     D    E     F 
  G    H     I     J 
+ ```
  
  Deja los procesos vivios hasta que al programa se le manda una señal SIGTERM desde consola. Entonces, El proceso A enviará una señal a:
  - El proceso de su izquierda (B)
